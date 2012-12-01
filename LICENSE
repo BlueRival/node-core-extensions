@@ -1,20 +1,3 @@
-core-extensions
-====================
-
-A set of extensions to the node core library, such as an isObject method to parallel isArray, clone method and mixin method.
-
-
-TO DO
-====================
-
-- Write test suite (mocha maybe?)
-- Add feature of custom clone functions based on object type
-- Make each extension optional
-
-
-License
-====================
-
 (The MIT License)
 
 Copyright (c) 2012 BlueRival Software <anthony@bluerival.com>
