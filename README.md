@@ -1,7 +1,7 @@
 core-extensions
 ====================
 
-A set of extensions to the node core library, such as an isObject method to parallel isArray, clone method and mixin method.
+A set of extensions to the node core library, such as an isObject method to parallel isArray, a clone method and a mixin method.
 
 
 TO DO
