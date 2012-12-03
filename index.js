@@ -80,7 +80,7 @@ Object.defineProperty( Object.prototype, "mixin", {
 									child[ name ][j] = child[ name ][j].mixin( source[j] );
 								}
 								else {
-									child[ name ][j] = source[j].clone();
+									child[ name ][j] = source[j];
 								}
 
 							}
@@ -97,7 +97,7 @@ Object.defineProperty( Object.prototype, "mixin", {
 					// otherwise, target becomes source
 					else {
 
-						child[ name ] = source.clone();
+						child[ name ] = source;
 
 					}
 				}
