@@ -4,6 +4,36 @@ Object.isObject = function ( thing ) {
 	return typeof thing === 'object' && !Array.isArray( thing ) && thing !== null;
 };
 
+Object.defineProperty( Object.prototype, "clone", {
+	enumerable: false,
+	value:      function () {
+
+		var target = null;
+		var type = typeof this;
+
+		if ( this === undefined ) {
+			target = undefined;
+		}
+		else if ( this === null ) {
+			target = null;
+		}
+		else if ( type == 'string' || type == 'number' || type == 'boolean' ) {
+			target = this;
+		}
+		else if ( this instanceof Date ) {
+			target = new Date( this.toISOString() );
+		}
+		else if ( Object.isObject( this ) || Array.isArray( this ) ) {
+			target = JSON.parse( JSON.stringify( this ) ); // probably a slightly more efficient way to do this, but this is ok for now
+		}
+		else { // functions, etc. not clonable yet
+			target = undefined;
+		}
+
+		return target;
+	}
+} );
+
 Object.defineProperty( Object.prototype, "mixin", {
 	enumerable: false,
 	value:      function () {
@@ -43,8 +73,17 @@ Object.defineProperty( Object.prototype, "mixin", {
 
 						if ( Array.isArray( source ) ) {
 
-							// ...replace target array with a new array containing existing values and new values
-							child[ name ] = target.concat( source );
+							// ...merge source array into target array
+							for ( var j = 0; j < source.length; j++ ) {
+
+								if ( typeof child[ name ][j] === 'object' ) {
+									child[ name ][j] = child[ name ][j].mixin( source[j] );
+								}
+								else {
+									child[ name ][j] = source[j].clone();
+								}
+
+							}
 
 						}
 
@@ -58,7 +97,7 @@ Object.defineProperty( Object.prototype, "mixin", {
 					// otherwise, target becomes source
 					else {
 
-						child[ name ] = source;
+						child[ name ] = source.clone();
 
 					}
 				}
@@ -67,36 +106,6 @@ Object.defineProperty( Object.prototype, "mixin", {
 		}
 
 		return this;
-	}
-} );
-
-Object.defineProperty( Object.prototype, "clone", {
-	enumerable: false,
-	value:      function () {
-
-		var target = null;
-		var type = typeof this;
-
-		if ( this === undefined ) {
-			target = undefined;
-		}
-		else if ( this === null ) {
-			target = null;
-		}
-		else if ( type == 'string' || type == 'number' || type == 'boolean' ) {
-			target = this;
-		}
-		else if ( this instanceof Date ) {
-			target = new Date( this.toISOString() );
-		}
-		else if ( Object.isObject( this ) || Array.isArray( this ) ) {
-			target = JSON.parse( JSON.stringify( this ) ); // probably a slightly more efficient way to do this, but this is ok for now
-		}
-		else { // functions, regex, etc. not clonable yet
-			throw "Cannot clone " + typeof this;
-		}
-
-		return target;
 	}
 } );
 
