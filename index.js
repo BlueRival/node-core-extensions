@@ -38,7 +38,7 @@ Object.defineProperty( Object.prototype, "mixin", {
 	enumerable: false,
 	value:      function () {
 
-		var child = this;
+		var child = this.clone(); // clone so we don't modify the original
 
 		// Handle case when target is a string or something (possible in deep copy)
 		if ( typeof child !== "object" && typeof child != 'function' ) {
