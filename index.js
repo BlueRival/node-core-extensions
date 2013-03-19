@@ -105,7 +105,7 @@ Object.defineProperty( Object.prototype, "mixin", {
 
 		}
 
-		return this;
+		return child;
 	}
 } );
 
