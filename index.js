@@ -9,13 +9,33 @@ Object.defineProperty( Object.prototype, "clone", {
 	value: function () {
 
 		var target = null;
-		var type = typeof this;
 
 		if ( this instanceof Date ) {
 			target = new Date( this.toISOString() );
 		}
-		else if ( Object.isObject( this ) || Array.isArray( this ) ) {
-			target = JSON.parse( JSON.stringify( this ) ); // probably a slightly more efficient way to do this, but this is ok for now
+		else if ( Array.isArray( this ) ) {
+			target = [];
+			for ( var i = 0; i < this.length; i++ ) {
+				if ( Array.isArray( this[i] ) || Object.isObject( this[i] ) ) {
+					target[i] = this[i].clone();
+				}
+				else {
+					target[i] = this[i];
+				}
+			}
+		}
+		else if ( Object.isObject( this ) ) {
+			target = {};
+			for ( var field in this ) {
+				if ( this.hasOwnProperty( field ) ) {
+					if ( Array.isArray( this[field] ) || Object.isObject( this[field] ) ) {
+						target[field] = this[field].clone();
+					}
+					else {
+						target[field] = this[field];
+					}
+				}
+			}
 		}
 		else { // functions, etc. not clonable yet, just pass through
 			target = this;
@@ -79,10 +99,6 @@ Object.defineProperty( Object.prototype, "mixin", {
 
 					var target = child[ name ];
 					var source = parent[ name ];
-
-					if ( typeof target === 'function' || typeof source === 'function' ) {
-						throw new Error( 'mixin does not support function values' );
-					}
 
 					// if target exists and is an array...
 					if ( Array.isArray( target ) ) {

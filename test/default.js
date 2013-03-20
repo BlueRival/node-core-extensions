@@ -159,6 +159,8 @@ describe( 'mixin()', function () {
 					string: 'germany'
 				}
 			}
+		},
+		func: function () {
 		}
 	};
 
@@ -181,6 +183,8 @@ describe( 'mixin()', function () {
 			'bye': 'france',
 			'an array': [
 				'one',
+				function () {
+				},
 				1,
 				'onepointone',
 				1.1,

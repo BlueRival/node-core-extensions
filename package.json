@@ -2,7 +2,7 @@
 	"name": "core-extensions",
 	"description": "A set of extensions to the node core library, such as an isObject method to parallel isArray, a clone method and a mixin method.",
 	"author": "Anthony Hildoer <anthony@bluerival.com>",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"repository": {
 		"type": "git",
 		"url": "git://github.com/bluerival/node-core-extensions.git"
