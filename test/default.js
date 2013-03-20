@@ -40,11 +40,11 @@ describe( 'Object.isObject()', function () {
 	describe( 'should return true for any kind of object:', function () {
 
 		it( 'new Date()', function () {
-			assert.equal( Object.isObject( new Date() ), false );
+			assert.equal( Object.isObject( new Date() ), true );
 		} );
 
 		it( 'new RegExp()', function () {
-			assert.equal( Object.isObject( new RegExp() ), false );
+			assert.equal( Object.isObject( new RegExp() ), true );
 		} );
 
 	} );
