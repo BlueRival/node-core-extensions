@@ -1,15 +1,26 @@
 core-extensions
 ====================
 
-A set of extensions to the node core library, such as an isObject method to parallel isArray, a clone method and a mixin method.
+A set of extensions to the node core library, such as an Object.isObject()
+method to parallel Array.isArray(), a clone() method on all objects and a
+mixin() method on all objects.
+
+
+Documentation
+====================
+
+For the time being, please see the test cases in test/default.js to understand
+exactly how Object.isObject(), clone() and mixin() behave.
 
 
 TO DO
 ====================
 
-- Write test suite (mocha maybe?)
-- Add feature of custom clone functions based on object type
-- Make each extension optional
+- write examples in this doc
+- add support of custom clone functions based on object type
+- add support of defaulting to clone() methods already on items to be cloned
+- make each extension optional
+- refactoring: mixin has grown unruly
 
 
 License
