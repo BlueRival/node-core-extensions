@@ -7,6 +7,7 @@ describe( 'Object.isObject()', function () {
 
 	it( 'should return false for an array', function () {
 		assert.equal( Object.isObject( [] ), false );
+		assert.equal( Object.isObject( [ "one", "two", "three" ] ), false );
 	} );
 
 	it( 'should return false for NULL', function () {
@@ -19,18 +20,24 @@ describe( 'Object.isObject()', function () {
 
 	it( 'should return false for a string', function () {
 		assert.equal( Object.isObject( "string" ), false );
+		assert.equal( Object.isObject( "" ), false );
 	} );
 
 	it( 'should return false for an integer', function () {
 		assert.equal( Object.isObject( 1 ), false );
+		assert.equal( Object.isObject( 0 ), false );
+		assert.equal( Object.isObject( -1 ), false );
 	} );
 
 	it( 'should return false for a float', function () {
 		assert.equal( Object.isObject( 1.1 ), false );
+		assert.equal( Object.isObject( 0.0 ), false );
+		assert.equal( Object.isObject( -1.1 ), false );
 	} );
 
 	it( 'should return false for a boolean', function () {
 		assert.equal( Object.isObject( true ), false );
+		assert.equal( Object.isObject( false ), false );
 	} );
 
 	it( 'should return true for an object {}', function () {
@@ -45,6 +52,89 @@ describe( 'Object.isObject()', function () {
 
 		it( 'new RegExp()', function () {
 			assert.equal( Object.isObject( new RegExp() ), true );
+		} );
+
+	} );
+
+} );
+
+describe( 'Object.getType()', function () {
+
+	it( 'should handle UNDEFINED', function () {
+		assert.equal( Object.getType( undefined ), 'undefined' );
+	} );
+
+	it( 'should handle NULL', function () {
+		assert.equal( Object.getType( null ), 'null' );
+	} );
+
+	it( 'should handle strings', function () {
+		assert.equal( Object.getType( "string" ), "string" );
+		assert.equal( "string".getType(), "string" );
+	} );
+
+	it( 'should handle integers', function () {
+		assert.equal( Object.getType( 1 ), 'integer' );
+		assert.equal( (1).getType(), 'integer' );
+		assert.equal( Object.getType( -1 ), 'integer' );
+		assert.equal( (-1).getType(), 'integer' );
+		assert.equal( Object.getType( 0 ), 'integer' );
+		assert.equal( (0).getType(), 'integer' );
+		assert.equal( Object.getType( 0.0 ), 'integer' );
+		assert.equal( (0.0).getType(), 'integer' );
+		assert.equal( Object.getType( Number.MAX_VALUE ), 'integer' );
+		assert.equal( (Number.MAX_VALUE).getType(), 'integer' );
+		assert.equal( Object.getType( -Number.MAX_VALUE ), 'integer' );
+		assert.equal( (-Number.MAX_VALUE).getType(), 'integer' );
+	} );
+
+	it( 'should handle floats', function () {
+		assert.equal( Object.getType( 1.1 ), 'float' );
+		assert.equal( (1.1).getType(), 'float' );
+		assert.equal( Object.getType( -1.1 ), 'float' );
+		assert.equal( (-1.1).getType(), 'float' );
+		assert.equal( Object.getType( Number.MIN_VALUE ), 'float' );
+		assert.equal( (Number.MIN_VALUE).getType(), 'float' );
+		assert.equal( Object.getType( -Number.MIN_VALUE ), 'float' );
+		assert.equal( (-Number.MIN_VALUE).getType(), 'float' );
+	} );
+
+	it( 'should handle booleans', function () {
+		assert.equal( Object.getType( true ), 'boolean' );
+		assert.equal( Object.getType( false ), 'boolean' );
+		assert.equal( (true).getType(), 'boolean' );
+		assert.equal( (false).getType(), 'boolean' );
+	} );
+
+	it( 'should handle arrays', function () {
+		assert.equal( Object.getType( [] ), 'array' );
+		assert.equal( Object.getType( [ "one", "two", "three" ] ), 'array' );
+		assert.equal( [].getType(), 'array' );
+		assert.equal( [ "one", "two", "three" ].getType(), 'array' );
+	} );
+
+	it( 'should handle functions', function () {
+		assert.equal( Object.getType( function () {
+		} ), 'function' );
+		assert.equal( (function () {
+		}).getType(), 'function' );
+	} );
+
+	it( 'should handle {}', function () {
+		assert.equal( Object.getType( {} ), 'object' );
+		assert.equal( {}.getType(), 'object' );
+	} );
+
+	describe( 'should handle any other kind of object:', function () {
+
+		it( 'new Date()', function () {
+			assert.equal( Object.getType( new Date() ), 'object' );
+			assert.equal( (new Date()).getType(), 'object' );
+		} );
+
+		it( 'new RegExp()', function () {
+			assert.equal( Object.getType( new RegExp() ), 'object' );
+			assert.equal( (new RegExp()).getType(), 'object' );
 		} );
 
 	} );
@@ -94,8 +184,11 @@ describe( 'clone()', function () {
 			'number': 1,
 			'float': 1.04,
 			'array numbers': [
-				1, 4.45, 32, 3, 3413
+				1, 4.45, 32, 3, 3413, function () {
+				}
 			],
+			'func': function () {
+			},
 			'object': {
 				'array field': [
 					'hi', 'there'
@@ -103,7 +196,13 @@ describe( 'clone()', function () {
 				'number': 1,
 				'float': 1.04,
 				'array numbers': [
-					1, 4.45, 32, 3, 3413
+					1, 4.45, 32, 3, 3413,
+					{
+						name: 'user1'
+					},
+					{
+						name: 'user2'
+					}
 				],
 				'object': {
 					'deep': {
@@ -127,6 +226,24 @@ describe( 'clone()', function () {
 
 		it( 'should be a new object', function () {
 			assert.notStrictEqual( theObject.clone(), theObject );
+		} );
+
+		it( 'should not recurse beyond 100 levels', function () {
+			assert.throws( function () {
+
+				var cloneObject = {};
+				var ref = cloneObject;
+
+				for ( var i = 0; i < 300; i++ ) {
+					ref.nesting = {};
+					ref = ref.nesting;
+				}
+
+				ref.final = "hi";
+
+				cloneObject.clone();
+
+			} );
 		} );
 
 	} );
@@ -158,7 +275,15 @@ describe( 'mixin()', function () {
 				tags: {
 					string: 'germany'
 				}
-			}
+			},
+			contacts: [
+				{
+					name: 'user1'
+				},
+				{
+					name: 'user2'
+				}
+			]
 		},
 		func: function () {
 		}
@@ -169,7 +294,8 @@ describe( 'mixin()', function () {
 		data: {
 			subscription: {
 				id: null
-			}
+			},
+			contacts: []
 		}
 	};
 
@@ -235,6 +361,14 @@ describe( 'mixin()', function () {
 		assert.notStrictEqual( [].mixin( theArray ), theArray );
 	} );
 
+	// deep structure with empty input
+	it( 'should return the same deep structure with empty input object', function () {
+		assert.deepEqual( theObject.mixin( {} ), theObject );
+	} );
+	it( 'should return the same deep structure with empty input array', function () {
+		assert.deepEqual( theArray.mixin( [] ), theArray );
+	} );
+
 	// deep structure with undefined input
 	it( 'should return the same deep structure with undefined input object', function () {
 		assert.deepEqual( theObject.mixin( undefined ), theObject );
@@ -249,14 +383,6 @@ describe( 'mixin()', function () {
 	} );
 	it( 'should return the same deep structure with null input array', function () {
 		assert.deepEqual( theArray.mixin( null ), theArray );
-	} );
-
-	// deep structure with empty input
-	it( 'should return the same deep structure with empty input object', function () {
-		assert.deepEqual( theObject.mixin( {} ), theObject );
-	} );
-	it( 'should return the same deep structure with empty input array', function () {
-		assert.deepEqual( theArray.mixin( [] ), theArray );
 	} );
 
 	// deep structure with initialized default
@@ -291,14 +417,20 @@ describe( 'mixin()', function () {
 				'one'
 			],
 			'two',
-			'three'
+			'three',
+			{
+				'four': 4
+			}
 		];
 
 		var expectedArrayFromObject = [
 			0,
 			[ 'one' ],
 			2,
-			3
+			3,
+			{
+				'four': 4
+			}
 		];
 		expectedArrayFromObject[7] = 7;
 
@@ -391,6 +523,137 @@ describe( 'mixin()', function () {
 
 		assert.deepEqual( theDefault.mixin( theInput ), expectedObject );
 
+	} );
+
+	it( 'should mixin arrays over primitives', function () {
+
+		var theArray = [
+			'one',
+			'two',
+			{
+				'three': 'four'
+			},
+			[
+				'five'
+			]
+		];
+
+		assert.deepEqual( (true).mixin( theArray ), theArray );
+		assert.deepEqual( (false).mixin( theArray ), theArray );
+		assert.deepEqual( (1).mixin( theArray ), theArray );
+		assert.deepEqual( (-1).mixin( theArray ), theArray );
+		assert.deepEqual( (1.1).mixin( theArray ), theArray );
+		assert.deepEqual( (-1.1).mixin( theArray ), theArray );
+		assert.deepEqual( (0).mixin( theArray ), theArray );
+		assert.deepEqual( (0.0).mixin( theArray ), theArray );
+		assert.deepEqual( ("string").mixin( theArray ), theArray );
+		assert.deepEqual( ("").mixin( theArray ), theArray );
+
+	} );
+
+	it( 'should mixin objects over primitives', function () {
+
+		var theObject = {
+			'one': 1,
+			'two': 2,
+			'three': {
+				'four': 4
+			},
+			'five': [
+				'six'
+			]
+		};
+
+		assert.deepEqual( (true).mixin( theObject ), theObject );
+		assert.deepEqual( (false).mixin( theObject ), theObject );
+		assert.deepEqual( (1).mixin( theObject ), theObject );
+		assert.deepEqual( (-1).mixin( theObject ), theObject );
+		assert.deepEqual( (1.1).mixin( theObject ), theObject );
+		assert.deepEqual( (-1.1).mixin( theObject ), theObject );
+		assert.deepEqual( (0).mixin( theObject ), theObject );
+		assert.deepEqual( (0.0).mixin( theObject ), theObject );
+		assert.deepEqual( ("string").mixin( theObject ), theObject );
+		assert.deepEqual( ("").mixin( theObject ), theObject );
+
+	} );
+
+	it( 'should not mixin primitives over objects', function () {
+
+		var theObject = {
+			'one': 1,
+			'two': 2,
+			'three': {
+				'four': 4
+			},
+			'five': [
+				'six'
+			]
+		};
+
+		assert.deepEqual( theObject.mixin( undefined ), theObject );
+		assert.deepEqual( theObject.mixin( null ), theObject );
+		assert.deepEqual( theObject.mixin( true ), theObject );
+		assert.deepEqual( theObject.mixin( false ), theObject );
+		assert.deepEqual( theObject.mixin( 1 ), theObject );
+		assert.deepEqual( theObject.mixin( -1 ), theObject );
+		assert.deepEqual( theObject.mixin( 1.1 ), theObject );
+		assert.deepEqual( theObject.mixin( -1.1 ), theObject );
+		assert.deepEqual( theObject.mixin( 0 ), theObject );
+		assert.deepEqual( theObject.mixin( 0.0 ), theObject );
+		assert.deepEqual( theObject.mixin( "string" ), theObject );
+		assert.deepEqual( theObject.mixin( "" ), theObject );
+
+	} );
+
+	it( 'should not mixin primitives over arrays', function () {
+
+		var theArray = [
+			'one',
+			'two',
+			{
+				'three': 'four'
+			},
+			[
+				'five'
+			]
+		];
+
+		assert.deepEqual( theArray.mixin( undefined ), theArray );
+		assert.deepEqual( theArray.mixin( null ), theArray );
+		assert.deepEqual( theArray.mixin( true ), theArray );
+		assert.deepEqual( theArray.mixin( false ), theArray );
+		assert.deepEqual( theArray.mixin( 1 ), theArray );
+		assert.deepEqual( theArray.mixin( -1 ), theArray );
+		assert.deepEqual( theArray.mixin( 1.1 ), theArray );
+		assert.deepEqual( theArray.mixin( -1.1 ), theArray );
+		assert.deepEqual( theArray.mixin( 0 ), theArray );
+		assert.deepEqual( theArray.mixin( 0.0 ), theArray );
+		assert.deepEqual( theArray.mixin( "string" ), theArray );
+		assert.deepEqual( theArray.mixin( "" ), theArray );
+
+	} );
+
+	it( 'should not recurse beyond 100 levels', function () {
+		assert.throws( function () {
+
+			var mixinObject1 = {};
+			var mixinObject2 = {};
+			var ref1 = mixinObject1;
+			var ref2 = mixinObject2;
+
+			for ( var i = 0; i < 300; i++ ) {
+				ref1.nesting = {};
+				ref1 = ref1.nesting;
+				ref2.nesting = {};
+				ref2 = ref2.nesting;
+			}
+
+			ref1.final = "hi";
+			ref2.final = "bye";
+
+			mixinObject1.mixin( mixinObject2 );
+
+		} );
 	} );
 
 } );

@@ -1,12 +1,58 @@
 "use strict";
 
-Object.isObject = function ( thing ) {
-	return typeof thing === 'object' && !Array.isArray( thing ) && thing !== null;
-};
+Object.defineProperty( Object.prototype, 'isObject', {
+	enumerable: false,
+	value: function ( thing ) {
+		return typeof thing === 'object' && !Array.isArray( thing ) && thing !== null;
+	}
+} );
+
+Object.defineProperty( Object.prototype, 'getType', {
+	enumerable: false,
+	value: function ( thing ) {
+
+		// support calling on Object root class directly, or off a variable (doesn't work directly off of variable for undefined or null)
+		if ( arguments.length < 1 ) {
+			thing = this;
+		}
+
+		// handle exceptions that typeof doesn't handle
+		if ( thing === null ) {
+			return 'null';
+		}
+		else if ( Array.isArray( thing ) ) {
+			return 'array';
+		}
+
+		var type = typeof thing;
+
+		// more resolution on numbers
+		if ( type === 'number' ) {
+			if ( Math.ceil( thing ) > Math.floor( thing ) ) {
+				type = 'float';
+			}
+			else {
+				type = 'integer';
+			}
+		}
+
+		return type;
+
+	}
+} );
+
+var cloneDepth = 0;
 
 Object.defineProperty( Object.prototype, "clone", {
 	enumerable: false,
 	value: function () {
+
+		cloneDepth++;
+
+		if ( cloneDepth >= 100 ) {
+			cloneDepth = 0;
+			throw new Error( 'max clone depth of 100 reached' );
+		}
 
 		var target = null;
 
@@ -37,9 +83,11 @@ Object.defineProperty( Object.prototype, "clone", {
 				}
 			}
 		}
-		else { // functions, etc. not clonable yet, just pass through
+		else { // functions, etc. not clonable yet, and will pass through, though for primitives like strings and numbers, this is cloning
 			target = this;
 		}
+
+		cloneDepth--;
 
 		return target;
 	}
@@ -54,94 +102,122 @@ Object.defineProperty( Object.prototype, "mixin", {
 		mixinDepth++;
 
 		if ( mixinDepth >= 100 ) {
-			throw new Error( 'max mixin depth of ' + mixinDepth + ' reached' );
+			mixinDepth = 0;
+			throw new Error( 'max mixin depth of 100 reached' );
 		}
 
-		var child = this.clone(); // clone so we don't modify the original
-
-		// Handle case when target is a string or something (possible in deep copy)
-		if ( typeof child !== "object" && typeof child !== 'function' ) {
-			child = {};
-		}
-		var childIsArray = Array.isArray( child );
+		var target = this.clone(); // clone so we don't modify the original
 
 		// handle arbitrary number of mixins. precedence is from last to first item passed in.
 		for ( var i = 0; i < arguments.length; i++ ) {
 
-			var parent = arguments[i];
+			var source = arguments[i];
 
-			if ( !parent || (!Array.isArray( parent ) && !Object.isObject( parent ) ) ) {
-				continue;
-			}
+			// mixin the source differently depending on what is in the destination
+			switch ( target.getType() ) {
 
-			// Extend the base object
-			for ( var name in parent ) {
+				case 'object':
+				case 'array':
+				case 'function':
 
-				// don't copy parent stuffs
-				if ( parent.hasOwnProperty( name ) ) {
+					// mixin in the source differently depending on its type
+					switch ( Object.getType( source ) ) {
 
-					// only allow integer fields from parent if target is an array
-					if ( childIsArray ) {
+						case 'array':
+						case 'object':
+						case 'function':
 
-						var parsedName = parseFloat( name );
+							// we don't care what descendant of object the source is
+							for ( var field in source ) {
 
-						// detect not numbers
-						if ( isNaN( parsedName ) ) {
-							continue;
-						}
+								// don't mixin parent fields
+								if ( source.hasOwnProperty( field ) ) {
 
-						// detect floating point
-						if ( name.length !== Math.floor( parsedName ).toString().length ) {
-							continue;
-						}
+									// if the target is an array, only take fields that are integers
+									if ( Array.isArray( target ) ) {
 
-					}
+										var fieldFloat = parseFloat( field );
 
-					var target = child[ name ];
-					var source = parent[ name ];
+										// the field started with a number, or no number at all, then had non-numeric characters
+										if ( isNaN( fieldFloat ) || fieldFloat.toString().length != field.length || fieldFloat.getType() != 'integer' ) {
+											continue;
+										}
 
-					// if target exists and is an array...
-					if ( Array.isArray( target ) ) {
+									}
 
-						// can't replace an array in the target with anything else
-						if ( Array.isArray( source ) ) {
+									// recurse mixin differently depending on what the target value is
+									switch ( Object.getType( target[field] ) ) {
 
-							// ...merge source array into target array
-							for ( var j = 0; j < source.length; j++ ) {
+										// for any non-objects, do this
+										case 'undefined':
+										case 'null':
 
-								child[ name ][j] = child[ name ][j].mixin( source[j] );
+											switch ( Object.getType( source[field] ) ) {
+												case 'undefined':
+													// NO-OP undefined doesn't override anything
+													break;
+												case 'null':
+													target[field] = null;
+													break;
+												default:
+													target[field] = source[field].clone();
+													break;
+											}
 
+											break;
+
+										// if the target is already an object, we can mixin on it
+										default:
+
+											target[field] = target[field].mixin( source[field] );
+
+											break;
+									}
+
+								}
 							}
 
-						}
+							break;
+
+						default:
+							// NO-OP, primitives can't mixin to objects, arrays and functions
+							break;
 
 					}
 
-					// if target is an object, try to mixin source
-					else if ( Object.isObject( target ) ) {
-						child[ name ] = target.mixin( source );
+					break;
+
+				default:
+
+					// mixin in the source differently depending on its type
+					switch ( Object.getType( source ) ) {
+
+						// arrays and objects just replace primitives
+						case 'array':
+						case 'object':
+
+							// override primitives by just passing through a clone of parent
+							target = source.clone();
+
+							break;
+
+						default:
+
+							// target is a primitive and can't be null or undefined here, and all other primitives have equal precedence, so just pass through
+							target = source;
+
+							break;
+
 					}
 
-					else if ( source === undefined ) {
-						child[ name ] = undefined;
-					}
-
-					else if ( source === null ) {
-						child[ name ] = null;
-					}
-
-					// otherwise, target becomes source
-					else {
-						child[ name ] = source.clone();
-					}
-				}
+					break;
 			}
 
 		}
 
 		mixinDepth--;
 
-		return child;
+		return target;
 
 	}
 } );

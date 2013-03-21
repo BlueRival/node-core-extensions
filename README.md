@@ -20,7 +20,6 @@ TO DO
 - add support of custom clone functions based on object type
 - add support of defaulting to clone() methods already on items to be cloned
 - make each extension optional
-- refactoring: mixin has grown unruly
 
 
 License
