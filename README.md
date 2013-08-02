@@ -3,8 +3,15 @@ core-extensions
 
 A set of extensions to the node core library, such as an Object.isObject()
 method to parallel Array.isArray(), a clone() method on all objects and a
-mixin() method on all objects.
+mixin() method on all objects, and a getType() method.
 
+Name spacing is supported as of version 0.3.0. See new init function for details.
+
+isObject() will return TRUE for anything that is typeof object, is not an Array, and is not NULL
+clone.
+getType() will return 'null' for NULL, 'array' for an Array, 'float' for a non-integer number, 'integer' for an integer number, and typeof result for all else.
+clone() will return a distinct copy of the object it was called from. Date objects are cloned, arrays and objects are recursively cloned down 100 levels max and all else is just passed through.
+mixin() will return a clone of the original object, with any passed in objects merged in recursively up to 100 levels max. mixin() accepts an arbitrary number of arguments, they will be mixed in from left to right.
 
 Documentation
 ====================
